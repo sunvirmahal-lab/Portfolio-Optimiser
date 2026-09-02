@@ -1,0 +1,22 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environments
+.venv/
+venv/
+env/
+
+# Output artifacts (regenerated on each run)
+*.png
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
