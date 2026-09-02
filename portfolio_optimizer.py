@@ -44,12 +44,9 @@ def load_portfolio_data(tickers, start="2010-01-01"):
       - mu: array of annualized expected returns (naive historical mean)
       - Sigma: annualized covariance matrix (as a plain numpy array)
       - annual_vols: array of each asset's own annualized volatility
-    This replaces the separate eq_data/bond_data blocks — same logic,
-    just looped over an arbitrary list instead of hardcoded twice.
     """
     # Download all tickers in ONE call — yfinance handles multiple
-    # tickers natively and aligns them on the same date index for you,
-    # which avoids the manual pd.concat step you had to do for 2 assets.
+    # tickers natively and aligns them on the same date index for you
     raw = yf.download(tickers, start=start, auto_adjust=True)["Close"]
 
     # If only one ticker is passed, yfinance returns a Series, not a
@@ -59,7 +56,7 @@ def load_portfolio_data(tickers, start="2010-01-01"):
 
     returns_df = raw.pct_change().dropna()
 
-    # Same cleaning logic as before — drop any ticker with too much
+    # Data- cleaning-drop any ticker with too much
     # missing data, then re-drop NaN rows so everything aligns exactly.
     missing_pct = returns_df.isna().mean()
     good_tickers = missing_pct[missing_pct < 0.05].index.tolist()
@@ -200,9 +197,7 @@ def evaluate_portfolio_risk(w, returns_df, mu, Sigma, annual_vols,
     # ---------------- PRINT RESULTS ----------------
     # Interpretation guidance for each of these metrics (what typical
     # ranges mean, how to read VaR vs CVaR, etc.) is in README.md under
-    # "Interpreting the risk metrics" — kept out of this printed output
-    # since evaluate_portfolio_risk runs multiple times per session and
-    # repeating multi-paragraph explanations each time gets unwieldy fast.
+    # "Interpreting the risk metrics"
     print(f"\n{'=' * 55}")
     print(f"RISK EVALUATION — {label}")
     print(f"{'=' * 55}")
@@ -287,10 +282,7 @@ def run_portfolio_analysis(tickers, risk_free_rate=0.0469, start="2010-01-01",
         registry (see compare_all_portfolios()). Defaults to "auto", which
         generates a label from the ticker list itself (e.g. "VXUS+BND"),
         so every call is saved automatically and nothing gets silently
-        lost between calls — unlike reusing the same Python variable name
-        for different calls, which DOES overwrite the earlier one (that's
-        ordinary Python variable assignment, not something this function
-        controls). Pass an explicit string to use a custom label instead,
+        lost between calls. Pass an explicit string to use a custom label instead,
         or save_as=None to skip saving entirely.
 
     plot_frontier: if True, plots the efficient frontier. Defaults to
@@ -356,8 +348,7 @@ def run_portfolio_analysis(tickers, risk_free_rate=0.0469, start="2010-01-01",
     print(summary_table.to_string())
 
     if plot_frontier:
-        # Efficient frontier — genuinely curved with 3+ assets, since Sigma
-        # actually gets to influence the shape (unlike the 2-asset straight line)
+        # Efficient frontier 
         target_returns = np.linspace(mu_naive.min(), mu_naive.max(), 40)
         frontier_vols = []
         for r in target_returns:
@@ -451,16 +442,10 @@ def forward_stepwise_selection(candidate_tickers, risk_free_rate=0.0469,
     stays entirely within simple (0, 1) weight bounds throughout.
 
     min_improvement: the minimum Sharpe ratio increase required to keep
-        adding assets (default 0.005). This matters more than it might
-        look: adding an asset to a long-only max-Sharpe portfolio can
+        adding assets (default 0.005). Adding an asset to a long-only max-Sharpe portfolio can
         mathematically never REDUCE the achievable Sharpe ratio, since
         the optimizer can always set a new asset's weight to exactly 0
-        if it doesn't help. Combined with ordinary numerical noise from
-        the optimizer (it rarely lands on the exact same floating-point
-        value twice), a naive "stop only when improvement is <= 0" rule
-        essentially never triggers — some candidate will almost always
-        look infinitesimally better, even when the true improvement is
-        economically meaningless. min_improvement enforces a genuine,
+        if it doesn't help. min_improvement enforces a genuine,
         meaningful threshold instead of relying on exact-zero comparison.
 
     Returns the final selected ticker list and its risk/return stats.
@@ -497,9 +482,8 @@ def forward_stepwise_selection(candidate_tickers, risk_free_rate=0.0469,
                 best_candidate_sharpe = sharpe_trial
                 best_candidate = candidate
 
-        # FIX: require a MEANINGFUL improvement, not just any improvement
-        # at all — see min_improvement docstring above for why the naive
-        # "> 0" check essentially never stops the loop in practice.
+        # Require a MEANINGFUL improvement, not just any improvement
+        # at all — see min_improvement docstring above for reasoning
         if best_candidate is None or (best_candidate_sharpe - best_sharpe_so_far) < min_improvement:
             if best_candidate is not None:
                 print(f"\nBest remaining candidate ({best_candidate}) only improves "
@@ -536,12 +520,9 @@ def forward_stepwise_selection(candidate_tickers, risk_free_rate=0.0469,
 # go, then compared all at once — rather than manually tracking a growing
 # set of variables (results_1, results_2, results_3, ...) yourself.
 #
-# Worth knowing since it's slightly different from everything else in this
-# file: this IS mutable state that persists across function calls within
-# the same Python/notebook session — not a pure function. It resets if you
-# restart the kernel, and re-running a cell that calls run_portfolio_analysis
-# with the same save_as label will silently overwrite the earlier entry
-# (a warning is printed when that happens).
+# It resets if you restart the kernel, and re-running a cell that calls 
+# run_portfolio_analysis with the same save_as label will silently 
+# overwrite the earlier entry(a warning is printed when that happens).
 _portfolio_registry = {}
 
 
